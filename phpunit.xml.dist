@@ -1,0 +1,26 @@
+<phpunit
+	bootstrap="tests/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	>
+
+    <php>
+        <const name="WP_TESTS_MULTISITE" value="1" />
+        <env name="WP_TESTS_DIR" value="/tmp/wordpress-tests-lib/tests/phpunit" />
+    </php>
+
+	<testsuites>
+		<testsuite>
+			<directory prefix="test" suffix=".php">./tests/</directory>
+		</testsuite>
+	</testsuites>
+
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+		     <file>advanced-post-cache.php</file>
+        </whitelist>
+    </filter>
+</phpunit>
