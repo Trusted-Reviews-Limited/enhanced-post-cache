@@ -1,21 +1,32 @@
 {
-	"name"       : "automattic/advanced-post-cache",
-	"description": "Cache post queries for WordPress",
-	"homepage"   : "http://wordpress.org/plugins/advanced-caching/",
-	"type"       : "wordpress-plugin",
-	"license"    : "GPL-2.0+",
-	"authors"    : [
-		{
-			"name"    : "Automattic",
-			"homepage": "http://automattic.com/"
-		}
-	],
-	"support"    : {
-			"issues": "https://github.com/Automattic/advanced-post-cache/issues",
-			"source": "https://github.com/Automattic/advanced-post-cache",
-			"forum": "http://wordpress.org/support/plugin/advanced-caching"
-	},
-	"require": {
-		"composer/installers": "~1.0"
-	}
+    "name"       : "automattic/advanced-post-cache",
+    "description": "Cache post queries for WordPress",
+    "homepage"   : "http://wordpress.org/plugins/advanced-caching/",
+    "type"       : "wordpress-plugin",
+    "license"    : "GPL-2.0+",
+    "authors"    : [
+        {
+            "name"    : "Automattic",
+            "homepage": "http://automattic.com/"
+        }
+    ],
+    "support"    : {
+        "issues": "https://github.com/Automattic/advanced-post-cache/issues",
+        "source": "https://github.com/Automattic/advanced-post-cache",
+        "forum": "http://wordpress.org/support/plugin/advanced-caching"
+    },
+    "require": {
+        "composer/installers": "~1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "3.7.x@stable",
+        "mockery/mockery": "~0.9@stable",
+        "squizlabs/php_codesniffer": "@stable",
+        "phpmd/phpmd": "@stable",
+        "wp-coding-standards/wpcs": "dev-master"
+    },
+    "scripts": {
+        "post-install-cmd": "vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs",
+        "post-update-cmd": "vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs"
+    }
 }
