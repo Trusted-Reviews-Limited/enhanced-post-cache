@@ -8,6 +8,7 @@ class FlushCacheTest extends WP_UnitTestCase
         global $advanced_post_cache_object;
         $this->obj = $advanced_post_cache_object;
         $this->query = new WP_Query();
+        wp_cache_flush();
     }
 
     public function test_post_cache()
@@ -19,6 +20,38 @@ class FlushCacheTest extends WP_UnitTestCase
         $second_run = $this->query->query([]);
         $this->assertTrue(is_array($this->obj->all_post_ids));
         $this->assertEquals($first_run, $second_run);
+    }
+
+    public function test_count_returned_posts()
+    {
+        $this->factory->post->create_many(5);
+
+        $first_run = $this->query->query(['posts_per_page' => 2]);
+        $this->assertSame($this->obj->all_post_ids, false);
+        $this->assertSame(5, (int) $this->query->found_posts);
+        $this->assertSame(2, $this->query->post_count);
+        $this->assertsame(3, (int) $this->query->max_num_pages);
+
+        $second_run = $this->query->query(['posts_per_page' => 2]);
+        $this->assertTrue(is_array($this->obj->all_post_ids));
+        $this->assertEquals($first_run, $second_run);
+        $this->assertSame(5, (int) $this->query->found_posts);
+        $this->assertSame(2, $this->query->post_count);
+        $this->assertsame(3, (int) $this->query->max_num_pages);
+
+        $third_run = $this->query->query(['posts_per_page' => 3]);
+        $this->assertSame($this->obj->all_post_ids, false);
+        $this->assertSame(5, (int) $this->query->found_posts);
+        $this->assertSame(3, $this->query->post_count);
+        $this->assertsame(2, (int) $this->query->max_num_pages);
+
+        $this->factory->post->create_many(5);
+
+        $last_run = $this->query->query(['posts_per_page' => 3]);
+        $this->assertSame(10, (int) $this->query->found_posts);
+        $this->assertSame(3, $this->query->post_count);
+        $this->assertsame(4, (int) $this->query->max_num_pages);
+        $this->assertNotEquals($third_run, $last_run);
     }
 
     public function test_post_flushing_cache()
