@@ -8,7 +8,7 @@ Author URI: http://automattic.com/
 */
 
 class Advanced_Post_Cache {
-	var $cache_group = 'advanced_post_cache_';
+	var $cache_group = 'advanced_post_cache';
 
 	// Flag for temp (within one page load) turning invalidations on and off
 	// Used to prevent invalidation during new comment
@@ -20,7 +20,8 @@ class Advanced_Post_Cache {
 	/* Per query data */
 	var $cache_key = ''; // md5 of current SQL query
 	var $all_post_ids = false; // IDs of all posts current SQL query returns
-	var $found_posts = false; // The result of the FOUND_ROWS() query
+
+	private $found_posts = 0;
 
 	public function __construct() {
 		$this->setup_for_blog();
@@ -36,15 +37,7 @@ class Advanced_Post_Cache {
 		add_filter( 'split_the_query', '__return_true' );
 
 		add_filter( 'posts_request_ids', array( $this, 'posts_request_ids' ) ); // Short circuits if cached
-		add_filter( 'posts_results', array( $this, 'posts_results' ) ); // Collates if cached, primes cache if not
-
-		add_filter( 'post_limits_request', array(
-			$this,
-			'post_limits_request',
-		), 999, 2 ); // Checks to see if we need to worry about found_posts
-
-		add_filter( 'found_posts_query', array( $this, 'found_posts_query' ) ); // Short circuits if cached
-		add_filter( 'found_posts', array( $this, 'found_posts' ) ); // Reads from cache if cached, primes cache if not
+		add_filter( 'posts_results', array( $this, 'posts_results' ), 10, 2 ); // Collates if cached, primes cache if not
 	}
 
 	public function setup_for_blog( $new_blog_id = false, $previous_blog_id = false ) {
@@ -91,78 +84,57 @@ class Advanced_Post_Cache {
 		$this->do_flush_cache = false;
 	}
 
-	/* Cache Reading/Priming Functions */
-
 	/**
 	 * Determines (by hash of SQL) if query is cached.
 	 * If cached: Return query of needed post IDs.
 	 * Otherwise: Returns query unchanged.
 	 */
 	public function posts_request_ids( $sql ) {
-		$this->cache_key    = md5( $sql ); // init
+		global $wpdb;
+		$this->cache_key    = md5( $sql );
+		$this->found_posts  = 0;
 		$this->all_post_ids = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
-		$this->found_posts  = false;
 
-		// Query is cached
-		if ( is_array( $this->all_post_ids ) ) {
-			$this->found_posts = count( $this->all_post_ids );
+		if ( $this->is_cached() ) {
+			$wpdb->flush();
 			$sql = '';
+			$this->found_posts = wp_cache_get( 'found_' . $this->cache_key . $this->cache_salt, $this->cache_group );
 		}
 
 		return $sql;
 	}
 
 	/**
-	 * If cached: Collates posts returned by SQL query with posts that are already cached.  Orders correctly.
-	 * Otherwise: Primes cache with data for current posts WP_Query.
+	 * Post Results
+	 *
+	 * If is cached, we have posts cached for the current query, then filter running
+	 * `get_posts` on every cached id, otherwise cache the original ids and return the original result
+	 *
+	 * @see WP_Query::get_posts (post_results filter)
+	 *
+	 * @param array $posts array of WP_Post elements
+	 * @return array $posts array of WP_Post elements
 	 */
-	public function posts_results( $posts ) {
-		if ( is_array( $this->all_post_ids ) ) { // is cache
-			$posts = $this->all_post_ids;
+	public function posts_results( $posts, $wp_query ) {
+		if ( $this->is_cached() ) {
+			$posts = array_map( 'get_post', $this->all_post_ids );
+			$wp_query->found_posts = $this->found_posts;
 		} else {
 			$post_ids = wp_list_pluck( (array) $posts, 'ID' );
+
 			wp_cache_set( $this->cache_key . $this->cache_salt, $post_ids, $this->cache_group );
+			wp_cache_set( 'found_' . $this->cache_key . $this->cache_salt, $wp_query->found_posts, $this->cache_group );
 		}
 
-		return array_map( 'get_post', $posts );
-	}
-
-	/**
-	 * If $limits is empty, WP_Query never calls the found_rows stuff, so we set $this->found_rows to 'NA'
-	 */
-	public function post_limits_request( $limits, &$query ) {
-		if ( empty( $limits ) || ( isset( $query->query_vars['no_found_rows'] ) && $query->query_vars['no_found_rows'] ) ) {
-			$this->found_posts = 'NA';
-		} else {
-			$this->found_posts = false;
-		} // re-init
-
-		return $limits;
-	}
-
-	/**
-	 * If cached: Blanks SELECT FOUND_ROWS() query.  This data is already stored in cache.
-	 * Otherwise: Returns query unchanged.
-	 */
-	public function found_posts_query( $sql ) {
-		// is cached
-		if ( $this->found_posts && is_array( $this->all_post_ids ) ) {
-			$sql = '';
+		if ( $wp_query->query_vars['posts_per_page'] > -1 ) {
+			$wp_query->max_num_pages = ceil( $wp_query->found_posts / $wp_query->query_vars['posts_per_page'] );
 		}
 
-		return $sql;
+		return $posts;
 	}
 
-	/**
-	 * If cached: Returns cached result of FOUND_ROWS() query.
-	 * Otherwise: Returs result unchanged
-	 */
-	public function found_posts( $found_posts ) {
-		if ( $this->found_posts && is_array( $this->all_post_ids ) ) {
-			$found_posts = (int) $this->found_posts;
-		}
-
-		return $found_posts;
+	private function is_cached() {
+		return is_array( $this->all_post_ids );
 	}
 
 	private function set_cache_salt() {
