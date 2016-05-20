@@ -9,6 +9,7 @@ Author URI: http://timeincuk.com/
 
 class Enhanced_Post_Cache {
 
+
 	// IDs of all posts current SQL query returns
 	public $all_post_ids = false;
 
