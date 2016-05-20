@@ -8,8 +8,6 @@ Author URI: http://timeincuk.com/
 */
 
 class Enhanced_Post_Cache {
-
-
 	// IDs of all posts current SQL query returns
 	public $all_post_ids = false;
 
@@ -18,6 +16,8 @@ class Enhanced_Post_Cache {
 	private $cache_group = 'advanced_post_cache';
 	private $found_posts = 0;
 	private $cache_key = '';
+	private $last_result = array();
+
 	public $cache_salt = 0;
 
 	public function __construct() {
@@ -100,7 +100,8 @@ class Enhanced_Post_Cache {
 		$this->all_post_ids = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
 
 		if ( $this->is_cached() ) {
-			$wpdb->flush();
+			$this->last_result = $wpdb->last_result;
+			$wpdb->last_result = array();
 			$sql = '';
 			$this->found_posts = wp_cache_get( 'found_' . $this->cache_key . $this->cache_salt, $this->cache_group );
 		}
@@ -124,9 +125,13 @@ class Enhanced_Post_Cache {
 			return $posts;
 		}
 
+		global $wpdb;
+
 		if ( $this->is_cached() ) {
 			$posts = array_map( 'get_post', $this->all_post_ids );
 			$wp_query->found_posts = $this->found_posts;
+			$wpdb->last_result = $this->last_result;
+			$this->last_result = array();
 		} else {
 			$post_ids = wp_list_pluck( (array) $posts, 'ID' );
 
