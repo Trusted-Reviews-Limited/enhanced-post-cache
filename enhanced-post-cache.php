@@ -9,13 +9,15 @@ Author URI: http://timeincuk.com/
 
 class Enhanced_Post_Cache {
 
+	// IDs of all posts current SQL query returns
+	public $all_post_ids = false;
+
 	private $do_flush_cache = true;
+	private $cache_queries = true;
 	private $cache_group = 'advanced_post_cache';
 	private $found_posts = 0;
 	private $cache_key = '';
-
-	public $cache_salt = 0; // Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
-	public $all_post_ids = false; // IDs of all posts current SQL query returns
+	public $cache_salt = 0;
 
 	public function __construct() {
 		$this->setup_for_blog();
@@ -28,10 +30,11 @@ class Enhanced_Post_Cache {
 		add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_post_cache' ) );
 		add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_post_cache' ) );
 
+		add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 		add_filter( 'split_the_query', '__return_true' );
 
-		add_filter( 'posts_request_ids', array( $this, 'posts_request_ids' ) ); // Short circuits if cached
-		add_filter( 'posts_results', array( $this, 'posts_results' ), 10, 2 ); // Collates if cached, primes cache if not
+		add_filter( 'posts_request_ids', array( $this, 'posts_request_ids' ) );
+		add_filter( 'posts_results', array( $this, 'posts_results' ), 10, 2 );
 	}
 
 	public function setup_for_blog( $new_blog_id = false, $previous_blog_id = false ) {
@@ -61,11 +64,35 @@ class Enhanced_Post_Cache {
 	}
 
 	/**
-	 * Determines (by hash of SQL) if query is cached.
-	 * If cached: Return query of needed post IDs.
-	 * Otherwise: Returns query unchanged.
+	 * Pre Get Posts
+	 *
+	 * An easy way to switch off the plugin for any specific query
+	 *
+	 * @see WP_Query::get_posts (pre_get_posts action)
+	 *
+	 * @param WP_Query $wp_query The WP_Query instance
+	 */
+	public function pre_get_posts( $wp_query ) {
+		$this->cache_queries = apply_filters( 'use_enhanced_post_cache', true, $wp_query );
+	}
+
+	/**
+	 * Post Results Ids
+	 *
+	 * Tries to search if the current query is cached:
+	 * If cached: stop the normal execution by emptying $sql and flushing $wpdb
+	 * If not cached: returns to the normal WP_Query execution
+	 *
+	 * @see WP_Query::get_posts (post_request_ids filter)
+	 *
+	 * @param string $sql Query to be executed
+	 * @return string $sql empty string (if cached) or same query (if not cached)
 	 */
 	public function posts_request_ids( $sql ) {
+		if ( ! $this->cache_queries ) {
+			return $sql;
+		}
+
 		global $wpdb;
 		$this->cache_key = md5( $sql );
 		$this->found_posts = 0;
@@ -92,6 +119,10 @@ class Enhanced_Post_Cache {
 	 * @return array $posts array of WP_Post elements
 	 */
 	public function posts_results( $posts, $wp_query ) {
+		if ( ! $this->cache_queries ) {
+			return $posts;
+		}
+
 		if ( $this->is_cached() ) {
 			$posts = array_map( 'get_post', $this->all_post_ids );
 			$wp_query->found_posts = $this->found_posts;
@@ -120,7 +151,7 @@ class Enhanced_Post_Cache {
 
 	private function needs_cache_clear() {
 		return $this->do_flush_cache
-		    && ! ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+			&& ! ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
 			&& ! is_admin()
 			&& ! (isset( $_POST['wp-preview'] ) && 'dopreview' === $_POST['wp-preview']);
 	}
