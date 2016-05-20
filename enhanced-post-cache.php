@@ -1,27 +1,21 @@
 <?php
 /*
-Plugin Name: Advanced Post Caching
-Description: Cache post queries.
-Version: 0.3
-Author: Automattic
-Author URI: http://automattic.com/
+Plugin Name: Enhanced Post Cache
+Description: Cache posts queries to not repeat same queries.
+Version: 1.0
+Author: TimeInc
+Author URI: http://timeincuk.com/
 */
 
-class Advanced_Post_Cache {
-	var $cache_group = 'advanced_post_cache';
+class Enhanced_Post_Cache {
 
-	// Flag for temp (within one page load) turning invalidations on and off
-	// Used to prevent invalidation during new comment
-	var $do_flush_cache = true;
-
-	/* Per cache-clear data */
-	var $cache_salt = 0; // Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
-
-	/* Per query data */
-	var $cache_key = ''; // md5 of current SQL query
-	var $all_post_ids = false; // IDs of all posts current SQL query returns
-
+	private $do_flush_cache = true;
+	private $cache_group = 'advanced_post_cache';
 	private $found_posts = 0;
+	private $cache_key = '';
+
+	public $cache_salt = 0; // Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
+	public $all_post_ids = false; // IDs of all posts current SQL query returns
 
 	public function __construct() {
 		$this->setup_for_blog();
@@ -45,35 +39,17 @@ class Advanced_Post_Cache {
 			return;
 		}
 
-		$this->cache_salt = wp_cache_get( 'cache_incrementors', 'advanced_post_cache' ); // Get and construct current cache group name
+		$this->cache_salt = wp_cache_get( 'cache_incrementors', 'advanced_post_cache' );
+
 		if ( ! is_numeric( $this->cache_salt ) ) {
 			$this->set_cache_salt();
 		}
-
 	}
 
-	/* Advanced Post Cache API */
-
-	/**
-	 * Flushes the cache by incrementing the cache group
-	 */
 	public function flush_cache() {
-		// Cache flushes have been disabled
-		if ( ! $this->do_flush_cache ) {
-			return;
+		if ( $this->needs_cache_clear() ) {
+		    $this->set_cache_salt();
 		}
-
-		// Bail on post preview
-		if ( is_admin() && isset( $_POST['wp-preview'] ) && 'dopreview' === $_POST['wp-preview'] ) {
-			return;
-		}
-
-		// Bail on autosave
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		$this->set_cache_salt();
 	}
 
 	public function do_clear_advanced_post_cache() {
@@ -91,8 +67,8 @@ class Advanced_Post_Cache {
 	 */
 	public function posts_request_ids( $sql ) {
 		global $wpdb;
-		$this->cache_key    = md5( $sql );
-		$this->found_posts  = 0;
+		$this->cache_key = md5( $sql );
+		$this->found_posts = 0;
 		$this->all_post_ids = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
 
 		if ( $this->is_cached() ) {
@@ -141,7 +117,14 @@ class Advanced_Post_Cache {
 		$this->cache_salt = microtime();
 		wp_cache_set( 'cache_incrementors', $this->cache_salt, 'advanced_post_cache' );
 	}
+
+	private function needs_cache_clear() {
+		return $this->do_flush_cache
+		    && ! ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+			&& ! is_admin()
+			&& ! (isset( $_POST['wp-preview'] ) && 'dopreview' === $_POST['wp-preview']);
+	}
 }
 
-global $advanced_post_cache_object;
-$advanced_post_cache_object = new Advanced_Post_Cache;
+global $enhanced_post_cache_object;
+$enhanced_post_cache_object = new Enhanced_Post_Cache;
