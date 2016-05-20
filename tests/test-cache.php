@@ -88,7 +88,8 @@ class FlushCacheTest extends WP_UnitTestCase
         $this->assertSame($this->obj->all_post_ids, false);
     }
 
-    public function test_flush_cache() {
+    public function test_flush_cache()
+    {
         $salt = $this->obj->cache_salt;
         $this->obj->dont_clear_advanced_post_cache();
         $this->obj->flush_cache();
@@ -117,7 +118,8 @@ class FlushCacheTest extends WP_UnitTestCase
         $this->assertSame($salt, $this->obj->cache_salt);
     }
 
-    public function test_deactivation_filter() {
+    public function test_deactivation_filter()
+    {
         add_filter('use_enhanced_post_cache', '__return_false');
 
         $this->factory->post->create_many(3);
@@ -126,6 +128,17 @@ class FlushCacheTest extends WP_UnitTestCase
 
         $first_run = $this->query->query([]);
         $this->assertFalse($this->obj->all_post_ids);
+    }
+
+    public function test_last_result_saving()
+    {
+        $this->factory->post->create_many(2);
+        $first_run = $this->query->query([]);
+        $this->assertFalse($this->obj->all_post_ids);
+
+        $first_run = $this->query->query([]);
+        global $wpdb;
+        $this->assertNotSame([], $wpdb->last_result);
     }
 
     public function tearDown()
