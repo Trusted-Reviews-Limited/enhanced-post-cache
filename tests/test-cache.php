@@ -117,6 +117,17 @@ class FlushCacheTest extends WP_UnitTestCase
         $this->assertSame($salt, $this->obj->cache_salt);
     }
 
+    public function test_deactivation_filter() {
+        add_filter('use_enhanced_post_cache', '__return_false');
+
+        $this->factory->post->create_many(3);
+        $first_run = $this->query->query([]);
+        $this->assertFalse($this->obj->all_post_ids);
+
+        $first_run = $this->query->query([]);
+        $this->assertFalse($this->obj->all_post_ids);
+    }
+
     public function tearDown()
     {
         parent::tearDown();
