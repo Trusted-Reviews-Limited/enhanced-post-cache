@@ -16,7 +16,7 @@ WP_CORE_DIR=${WP_CORE_DIR-/tmp/wordpress/}
 
 download() {
     if [ `which curl` ]; then
-        curl -s "$1" > "$2";
+        curl -sL "$1" > "$2";
     elif [ `which wget` ]; then
         wget -nv -O "$2" "$1"
     fi
@@ -78,12 +78,9 @@ install_test_suite() {
 	if [ ! -d $WP_TESTS_DIR ]; then
 		# set up testing suite
 		mkdir -p $WP_TESTS_DIR
- 		git clone https://github.com/aaronjorbin/develop.wordpress/ $WP_TESTS_DIR
+        download https://github.com/aaronjorbin/develop.wordpress/tarball/4.5 /tmp/test_wordpress.tar.gz
+        tar --strip-components=1 -zxmf /tmp/test_wordpress.tar.gz -C $WP_TESTS_DIR
 	fi
-
-    cd $WP_TESTS_DIR
-    git fetch --tags
-    git checkout 4.5
 
 	if [ ! -f wp-tests-config.php ]; then
 		download https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php "$WP_TESTS_DIR"/wp-tests-config.php
@@ -114,7 +111,7 @@ install_db() {
 	fi
 
 	# create database
-    if ! mysqlshow -h$DB_HOSTNAME -u$DB_USER -p$DB_PASS $DB_NAME | grep -q "Database:"; then
+    if ! mysqlshow -h$DB_HOSTNAME -u$DB_USER -p="$DB_PASS" $DB_NAME | grep -q "Database:"; then
 	    mysqladmin create $DB_NAME --user="$DB_USER" --password="$DB_PASS"$EXTRA
     else
 		echo "Database $DB_NAME already exists, skipping"
