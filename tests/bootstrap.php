@@ -5,6 +5,8 @@
  * @package keystone-ipctags
  */
 
+require '/usr/local/bin/psysh';
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
 	$_tests_dir = '/tmp/wordpress-tests-lib';
@@ -18,7 +20,7 @@ require_once $_tests_dir . '/includes/functions.php';
  */
 function _manually_load_plugin() {
     // include the plugin files
-	require dirname( dirname( __FILE__ ) ) . '/advanced-post-cache.php';
+	require dirname( dirname( __FILE__ ) ) . '/enhanced-post-cache.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 

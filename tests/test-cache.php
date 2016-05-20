@@ -1,14 +1,15 @@
 <?php
 
+use \Mockery as m;
+
 class FlushCacheTest extends WP_UnitTestCase
 {
     public function setUp()
     {
         parent::setUp();
-        global $advanced_post_cache_object;
-        $this->obj = $advanced_post_cache_object;
+        global $enhanced_post_cache_object;
+        $this->obj = $enhanced_post_cache_object;
         $this->query = new WP_Query();
-        wp_cache_flush();
     }
 
     public function test_post_cache()
@@ -85,5 +86,40 @@ class FlushCacheTest extends WP_UnitTestCase
 
         $second_run = $this->query->query([]);
         $this->assertSame($this->obj->all_post_ids, false);
+    }
+
+    public function test_flush_cache() {
+        $salt = $this->obj->cache_salt;
+        $this->obj->dont_clear_advanced_post_cache();
+        $this->obj->flush_cache();
+        $this->assertSame($salt, $this->obj->cache_salt);
+
+        $this->obj->do_clear_advanced_post_cache();
+        $screen = m::mock('screen_class');
+        $screen->shouldReceive('in_admin')
+            ->times(3)
+            ->andReturn(true, false, false);
+        $GLOBALS['current_screen'] = $screen;
+        $this->obj->flush_cache();
+        $this->assertSame($salt, $this->obj->cache_salt);
+
+        $_POST['wp-preview'] = 'dopreview';
+        $this->obj->flush_cache();
+        $this->assertSame($salt, $this->obj->cache_salt);
+
+        unset($_POST['wp-preview']);
+        $this->obj->flush_cache();
+        $this->assertNotSame($salt, $this->obj->cache_salt);
+        $salt = $this->obj->cache_salt;
+
+        define('DOING_AUTOSAVE', true);
+        $this->obj->flush_cache();
+        $this->assertSame($salt, $this->obj->cache_salt);
+    }
+
+    public function tearDown()
+    {
+        parent::tearDown();
+        m::close();
     }
 }
