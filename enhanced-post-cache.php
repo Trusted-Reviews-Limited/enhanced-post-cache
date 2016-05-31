@@ -10,6 +10,7 @@ Author URI: http://timeincuk.com/
 class Enhanced_Post_Cache {
 	// IDs of all posts current SQL query returns
 	public $all_post_ids = false;
+	public $cache_salt = false;
 
 	private $do_flush_cache = true;
 	private $cache_queries = true;
@@ -18,15 +19,13 @@ class Enhanced_Post_Cache {
 	private $cache_key = '';
 	private $last_result = array();
 
-	public $cache_salt = 0;
-
 	public function __construct() {
 		$this->setup_for_blog();
 
 		add_action( 'switch_blog', array( $this, 'setup_for_blog' ), 10, 2 );
 
 		add_action( 'clean_term_cache', array( $this, 'flush_cache' ) );
-		add_action( 'clean_post_cache',  array( $this, 'flush_cache' ) );
+		add_action( 'clean_post_cache',  array( $this, 'clean_post_cache' ), 10, 2 );
 
 		add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_post_cache' ) );
 		add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_post_cache' ) );
@@ -39,14 +38,20 @@ class Enhanced_Post_Cache {
 	}
 
 	public function setup_for_blog( $new_blog_id = false, $previous_blog_id = false ) {
-		if ( $new_blog_id && $new_blog_id === $previous_blog_id ) {
+		if ( $new_blog_id && (int) $new_blog_id === (int) $previous_blog_id ) {
 			return;
 		}
 
 		$this->cache_salt = wp_cache_get( 'cache_incrementors', 'advanced_post_cache' );
 
-		if ( ! is_numeric( $this->cache_salt ) ) {
+		if ( false === $this->cache_salt ) {
 			$this->set_cache_salt();
+		}
+	}
+
+	public function clean_post_cache( $post_id, $post ) {
+		if ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) {
+			$this->flush_cache();
 		}
 	}
 
@@ -157,8 +162,6 @@ class Enhanced_Post_Cache {
 
 	private function needs_cache_clear() {
 		return $this->do_flush_cache
-			&& ! ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
-			&& ! is_admin()
 			&& ! (isset( $_POST['wp-preview'] ) && 'dopreview' === $_POST['wp-preview']);
 	}
 }
