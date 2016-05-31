@@ -25,4 +25,3 @@ before_script:
 script:
    - vendor/bin/phpunit
    - vendor/bin/phpcs
-   - vendor/bin/phpmd *.php text phpmd.xml.dist
