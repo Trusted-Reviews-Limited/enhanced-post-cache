@@ -31,7 +31,6 @@ class Enhanced_Post_Cache {
 		add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_post_cache' ) );
 
 		add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
-		add_filter( 'split_the_query', '__return_true' );
 
 		add_filter( 'posts_request_ids', array( $this, 'posts_request_ids' ) );
 		add_filter( 'posts_results', array( $this, 'posts_results' ), 10, 2 );
@@ -80,6 +79,7 @@ class Enhanced_Post_Cache {
 	 */
 	public function pre_get_posts( $wp_query ) {
 		$this->cache_queries = apply_filters( 'use_enhanced_post_cache', true, $wp_query );
+		add_filter( 'split_the_query', function() { return $this->cache_queries; } );
 	}
 
 	/**
