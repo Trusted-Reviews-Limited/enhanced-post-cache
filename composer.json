@@ -1,5 +1,5 @@
 {
-    "name"       : "timeincuk/enhanced-post-cache",
+    "name"       : "timeincoss/enhanced-post-cache",
     "description": "Cache post queries for WordPress",
     "type"       : "wordpress-muplugin",
     "license"    : "GPL-2.0+",
