@@ -27,6 +27,10 @@ class Enhanced_Post_Cache {
 		add_action( 'clean_term_cache', array( $this, 'flush_cache' ) );
 		add_action( 'clean_post_cache',  array( $this, 'clean_post_cache' ), 10, 2 );
 
+		add_action( 'deleted_post_meta', array( $this, 'update_post_meta' ), 10, 2 );
+		add_action( 'updated_post_meta', array( $this, 'update_post_meta' ), 10, 2 );
+		add_action( 'added_post_meta', array( $this, 'update_post_meta' ), 10, 2 );
+
 		add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_post_cache' ) );
 		add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_post_cache' ) );
 
@@ -52,6 +56,11 @@ class Enhanced_Post_Cache {
 		if ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) {
 			$this->flush_cache();
 		}
+	}
+
+	public function update_post_meta( $ignored, $post_id ) {
+		$post = get_post( $post_id );
+		$this->clean_post_cache( $post_id, $post );
 	}
 
 	public function flush_cache() {
