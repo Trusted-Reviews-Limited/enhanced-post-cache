@@ -14,7 +14,7 @@ class Enhanced_Post_Cache {
 
 	private $do_flush_cache = true;
 	private $cache_queries = true;
-	private $cache_group = 'advanced_post_cache';
+	private $cache_group = 'enhanced_post_cache';
 	private $found_posts = 0;
 	private $cache_key = '';
 	private $last_result = array();
@@ -109,6 +109,7 @@ class Enhanced_Post_Cache {
 		}
 
 		global $wpdb;
+<<<<<<< HEAD
 		
 		$query = $sql;
 		// Check if method existing before using it for backwards compat
@@ -117,14 +118,18 @@ class Enhanced_Post_Cache {
 			$query = $wpdb->remove_placeholder_escape( $query );
 		}
 		$this->cache_key = md5( $query );
+=======
+		$this->cache_key   = md5( $sql );
+>>>>>>> Instead of using two cache keys, just one and put both values in an array
 		$this->found_posts = 0;
-		$this->all_post_ids = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
+		$cache             = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
 
-		if ( $this->is_cached() ) {
-			$this->last_result = $wpdb->last_result;
-			$wpdb->last_result = array();
-			$sql = '';
-			$this->found_posts = wp_cache_get( 'found_' . $this->cache_key . $this->cache_salt, $this->cache_group );
+		if ( ! empty( $cache ) && is_array( $cache ) ) {
+			$this->last_result  = $wpdb->last_result;
+			$wpdb->last_result  = array();
+			$sql                = '';
+			$this->found_posts  = $cache['post_ids'];
+			$this->all_post_ids = $cache['found_posts'];
 		}
 
 		return $sql;
@@ -155,9 +160,11 @@ class Enhanced_Post_Cache {
 			$this->last_result = array();
 		} else {
 			$post_ids = wp_list_pluck( (array) $posts, 'ID' );
-
-			wp_cache_set( $this->cache_key . $this->cache_salt, $post_ids, $this->cache_group );
-			wp_cache_set( 'found_' . $this->cache_key . $this->cache_salt, $wp_query->found_posts, $this->cache_group );
+			$value = array(
+				'post_ids'    => $post_ids,
+				'found_posts' => $wp_query->found_posts,
+			);
+			wp_cache_set( $this->cache_key . $this->cache_salt, $value, $this->cache_group );
 		}
 
 		if ( $wp_query->query_vars['posts_per_page'] > -1 ) {
