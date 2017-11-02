@@ -25,7 +25,7 @@ class Enhanced_Post_Cache {
 
 		add_action( 'switch_blog', array( $this, 'setup_for_blog' ), 10, 2 );
 
-		add_action( 'clean_term_cache', array( $this, 'flush_cache' ) );
+		add_action( 'clean_term_cache',  array( $this, 'clean_term_cache' ), 10, 2 );
 		add_action( 'clean_post_cache',  array( $this, 'clean_post_cache' ), 10, 2 );
 
 		add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_post_cache' ) );
@@ -54,6 +54,20 @@ class Enhanced_Post_Cache {
 	public function clean_post_cache( $post_id, $post ) {
 		if ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) {
 			$this->cache_salt_key = $post->post_type;
+			$this->flush_cache();
+		}
+	}
+
+	public function clean_term_cache( $ids, $taxonomy_name ) {
+		$taxonomy = get_taxonomy( $taxonomy_name );
+		if ( $taxonomy ) {
+			foreach ( $taxonomy->object_type as $post_type ) {
+				if ( post_type_exists( $post_type ) ) {
+					$this->cache_salt_key = $post_type;
+					$this->flush_cache();
+				}
+			}
+		} else {
 			$this->flush_cache();
 		}
 	}
