@@ -56,7 +56,8 @@ class Enhanced_Post_Cache {
 	}
 
 	public function clean_post_cache( $post_id, $post ) {
-		if ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) {
+		$post = get_post( $post );
+		if ( $post instanceof WP_Post && ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) {
 			$this->cache_salt_key = $post->post_type;
 			$this->flush_cache();
 		}
