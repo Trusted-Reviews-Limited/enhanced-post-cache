@@ -17,6 +17,7 @@ class Enhanced_Post_Cache {
 	private $cache_group = 'advanced_post_cache';
 	private $found_posts = 0;
 	private $cache_key = '';
+	private $limits = '';
 	private $last_result = array();
 
 	public function __construct() {
@@ -35,6 +36,7 @@ class Enhanced_Post_Cache {
 		add_filter( 'posts_request_ids', array( $this, 'posts_request_ids' ) );
 		add_filter( 'posts_results', array( $this, 'posts_results' ), 10, 2 );
 		add_filter( 'posts_pre_query', array( $this, 'posts_pre_query' ), 999, 2 );
+		add_filter( 'post_limits_request', array( $this, 'post_limits_request' ) );
 	}
 
 	public function setup_for_blog( $new_blog_id = false, $previous_blog_id = false ) {
@@ -100,11 +102,22 @@ class Enhanced_Post_Cache {
 			$wp_query->request = apply_filters( 'posts_request_ids', $wp_query->request, $wp_query );
 			if ( ! $this->is_cached() ) {
 				$posts = $wpdb->get_col( $wp_query->request );
+				$wp_query->set_found_posts( $wp_query->query_vars, $this->limits );
 			}
 			$posts = $this->posts_results( $posts, $wp_query );
 		}
 
 		return $posts;
+	}
+
+	/**
+	 * @param $limits
+	 *
+	 * @return mixed
+	 */
+	function post_limits_request( $limits ){
+		$this->limits = $limits;
+		return $limits;
 	}
 
 	/**
@@ -166,6 +179,7 @@ class Enhanced_Post_Cache {
 			$wp_query->found_posts = $this->found_posts;
 			$wpdb->last_result     = $this->last_result;
 			$this->last_result     = array();
+			$this->limits          = '';
 		} else {
 			if ( $this->check_query_type( $wp_query, 'ids' ) ) {
 				$post_ids = $posts;
