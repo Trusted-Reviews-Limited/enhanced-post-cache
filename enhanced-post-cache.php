@@ -109,18 +109,14 @@ class Enhanced_Post_Cache {
 		}
 
 		global $wpdb;
-<<<<<<< HEAD
-		
+
 		$query = $sql;
 		// Check if method existing before using it for backwards compat
 		if( method_exists( $wpdb, 'remove_placeholder_escape' ) ) {
 			// Remove placeholders, as they would break the cache key for searches.
 			$query = $wpdb->remove_placeholder_escape( $query );
 		}
-		$this->cache_key = md5( $query );
-=======
-		$this->cache_key   = md5( $sql );
->>>>>>> Instead of using two cache keys, just one and put both values in an array
+		$this->cache_key   = md5( $query );
 		$this->found_posts = 0;
 		$cache             = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
 
