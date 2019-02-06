@@ -212,6 +212,7 @@ class Enhanced_Post_Cache {
 	private function check_query_type( $wp_query, $type = '' ) {
 		return isset( $wp_query->query_vars['fields'] ) && $type === $wp_query->query_vars['fields'];
 	}
+}
 
 global $enhanced_post_cache_object;
 $enhanced_post_cache_object = new Enhanced_Post_Cache;
