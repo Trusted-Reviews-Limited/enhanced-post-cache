@@ -202,29 +202,16 @@ class Enhanced_Post_Cache {
 	}
 
 	/**
-	 * @param $wp_query
-	 * @param $type
+	 * Helper function to check the type of query.
+	 *
+	 * @param wp_query $wp_query Current WP_Query Object.
+	 * @param string $type Either 'id' or empty QuickHashIntStringHash
 	 *
 	 * @return bool
 	 */
-	private function check_query_type( $wp_query, $type ) {
-		if ( isset( $wp_query->query_vars['fields'] ) && $type === $wp_query->query_vars['fields'] ) {
-			return true;
-		}
-
-		return false;
+	private function check_query_type( $wp_query, $type = '' ) {
+		return isset( $wp_query->query_vars['fields'] ) && $type === $wp_query->query_vars['fields'];
 	}
-
-	private function set_cache_salt() {
-		$this->cache_salt = microtime();
-		wp_cache_set( 'cache_incrementors', $this->cache_salt, 'advanced_post_cache' );
-	}
-
-	private function needs_cache_clear() {
-		return $this->do_flush_cache
-		       && ! (isset( $_POST['wp-preview'] ) && 'dopreview' === $_POST['wp-preview']);
-	}
-}
 
 global $enhanced_post_cache_object;
 $enhanced_post_cache_object = new Enhanced_Post_Cache;
