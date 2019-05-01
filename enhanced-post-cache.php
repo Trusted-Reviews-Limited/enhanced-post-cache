@@ -124,8 +124,8 @@ class Enhanced_Post_Cache {
 			$this->last_result  = $wpdb->last_result;
 			$wpdb->last_result  = array();
 			$sql                = '';
-			$this->found_posts  = $cache['post_ids'];
-			$this->all_post_ids = $cache['found_posts'];
+			$this->found_posts  = $cache['found_posts'];
+			$this->all_post_ids = $cache['post_ids'];
 		}
 
 		return $sql;
