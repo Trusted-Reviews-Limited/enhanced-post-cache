@@ -166,7 +166,6 @@ class Enhanced_Post_Cache {
 		}
 
 		global $wpdb;
-<<<<<<< HEAD
 
 		$query = $sql;
 		// Check if method existing before using it for backwards compat
@@ -182,22 +181,8 @@ class Enhanced_Post_Cache {
 			$this->last_result  = $wpdb->last_result;
 			$wpdb->last_result  = array();
 			$sql                = '';
-			$this->found_posts  = $cache['post_ids'];
-			$this->all_post_ids = $cache['found_posts'];
-=======
-		$this->cache_key = md5( $sql );
-		$this->found_posts = 0;
-		$this->all_post_ids = wp_cache_get( $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $this->cache_group );
-
-		if ( $this->is_cached() ) {
-			$this->last_result = $wpdb->last_result;
-			$wpdb->last_result = array();
-			$sql = '';
-			$this->found_posts = wp_cache_get( 'found_' . $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $this->cache_group );
-<<<<<<< HEAD
->>>>>>> Add caching by post type, using a cache salt for each post type
-=======
->>>>>>> e56a611a60f8ac9a3b0a116316345f26514d2bb1
+			$this->found_posts  = $cache['found_posts'];
+			$this->all_post_ids = $cache['post_ids'];
 		}
 
 		return $sql;
@@ -222,30 +207,22 @@ class Enhanced_Post_Cache {
 		global $wpdb;
 
 		if ( $this->is_cached() ) {
-			$posts = array_map( 'get_post', $this->all_post_ids );
+			$posts                 = array_map( 'get_post', $this->all_post_ids );
 			$wp_query->found_posts = $this->found_posts;
-			$wpdb->last_result = $this->last_result;
-			$this->last_result = array();
-			$this->cache_salt_key = 'any';
+			$wpdb->last_result     = $this->last_result;
+			$this->last_result     = array();
+			$this->cache_salt_key  = 'any';
 		} else {
 			$post_ids = wp_list_pluck( (array) $posts, 'ID' );
-<<<<<<< HEAD
-			$value = array(
+			$value    = array(
 				'post_ids'    => $post_ids,
 				'found_posts' => $wp_query->found_posts,
 			);
 			wp_cache_set( $this->cache_key . $this->cache_salt, $value, $this->cache_group );
-=======
 
-			wp_cache_set( $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $post_ids, $this->cache_group );
-			wp_cache_set( 'found_' . $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $wp_query->found_posts, $this->cache_group );
-<<<<<<< HEAD
->>>>>>> Add caching by post type, using a cache salt for each post type
-=======
->>>>>>> e56a611a60f8ac9a3b0a116316345f26514d2bb1
 		}
 
-		if ( $wp_query->query_vars['posts_per_page'] > -1 ) {
+		if ( $wp_query->query_vars['posts_per_page'] > - 1 ) {
 			$wp_query->max_num_pages = ceil( $wp_query->found_posts / $wp_query->query_vars['posts_per_page'] );
 		}
 
