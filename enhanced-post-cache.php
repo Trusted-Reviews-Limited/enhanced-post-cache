@@ -14,7 +14,7 @@ class Enhanced_Post_Cache {
 
 	private $do_flush_cache = true;
 	private $cache_queries = true;
-	private $cache_group = 'advanced_post_cache';
+	private $cache_group = 'enhanced_post_cache';
 	private $found_posts = 0;
 	private $cache_key = '';
 	private $limits = '';
@@ -27,6 +27,10 @@ class Enhanced_Post_Cache {
 
 		add_action( 'clean_term_cache', array( $this, 'flush_cache' ) );
 		add_action( 'clean_post_cache',  array( $this, 'clean_post_cache' ), 10, 2 );
+
+		add_action( 'deleted_post_meta', array( $this, 'update_post_meta' ), 10, 2 );
+		add_action( 'updated_post_meta', array( $this, 'update_post_meta' ), 10, 2 );
+		add_action( 'added_post_meta', array( $this, 'update_post_meta' ), 10, 2 );
 
 		add_action( 'wp_updating_comment_count', array( $this, 'dont_clear_advanced_post_cache' ) );
 		add_action( 'wp_update_comment_count', array( $this, 'do_clear_advanced_post_cache' ) );
@@ -55,6 +59,11 @@ class Enhanced_Post_Cache {
 		if ( ! wp_is_post_revision( $post ) && ! wp_is_post_autosave( $post ) ) {
 			$this->flush_cache();
 		}
+	}
+
+	public function update_post_meta( $ignored, $post_id ) {
+		$post = get_post( $post_id );
+		$this->clean_post_cache( $post_id, $post );
 	}
 
 	public function flush_cache() {
@@ -138,15 +147,23 @@ class Enhanced_Post_Cache {
 		}
 
 		global $wpdb;
-		$this->cache_key = md5( $sql );
-		$this->found_posts = 0;
-		$this->all_post_ids = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
 
-		if ( $this->is_cached() ) {
-			$this->last_result = $wpdb->last_result;
-			$wpdb->last_result = array();
-			$sql = '';
-			$this->found_posts = wp_cache_get( 'found_' . $this->cache_key . $this->cache_salt, $this->cache_group );
+		$query = $sql;
+		// Check if method existing before using it for backwards compat
+		if( method_exists( $wpdb, 'remove_placeholder_escape' ) ) {
+			// Remove placeholders, as they would break the cache key for searches.
+			$query = $wpdb->remove_placeholder_escape( $query );
+		}
+		$this->cache_key   = md5( $query );
+		$this->found_posts = 0;
+		$cache             = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
+
+		if ( ! empty( $cache ) && is_array( $cache ) ) {
+			$this->last_result  = $wpdb->last_result;
+			$wpdb->last_result  = array();
+			$sql                = '';
+			$this->found_posts  = $cache['found_posts'];
+			$this->all_post_ids = $cache['post_ids'];
 		}
 
 		return $sql;
@@ -186,8 +203,12 @@ class Enhanced_Post_Cache {
 			} else {
 				$post_ids = wp_list_pluck( (array) $posts, 'ID' );
 			}
-			wp_cache_set( $this->cache_key . $this->cache_salt, $post_ids, $this->cache_group );
-			wp_cache_set( 'found_' . $this->cache_key . $this->cache_salt, $wp_query->found_posts, $this->cache_group );
+
+			$value = array(
+				'post_ids'    => $post_ids,
+				'found_posts' => $wp_query->found_posts,
+			);
+			wp_cache_set( $this->cache_key . $this->cache_salt, $value, $this->cache_group );
 		}
 
 		if ( $wp_query->query_vars['posts_per_page'] > -1 ) {
