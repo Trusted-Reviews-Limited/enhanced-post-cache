@@ -63,11 +63,12 @@ class Enhanced_Post_Cache {
 		}
 	}
 
-<<<<<<< HEAD
+
 	public function update_post_meta( $ignored, $post_id ) {
 		$post = get_post( $post_id );
 		$this->clean_post_cache( $post_id, $post );
-=======
+	}
+	
 	public function clean_term_cache( $ids, $taxonomy_name ) {
 		$taxonomy = get_taxonomy( $taxonomy_name );
 		if ( $taxonomy ) {
@@ -80,7 +81,6 @@ class Enhanced_Post_Cache {
 		} else {
 			$this->flush_cache();
 		}
->>>>>>> Invalid post type caches when term is added / editted.
 	}
 
 	public function flush_cache() {
@@ -194,7 +194,10 @@ class Enhanced_Post_Cache {
 			$wpdb->last_result = array();
 			$sql = '';
 			$this->found_posts = wp_cache_get( 'found_' . $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $this->cache_group );
+<<<<<<< HEAD
 >>>>>>> Add caching by post type, using a cache salt for each post type
+=======
+>>>>>>> e56a611a60f8ac9a3b0a116316345f26514d2bb1
 		}
 
 		return $sql;
@@ -236,7 +239,10 @@ class Enhanced_Post_Cache {
 
 			wp_cache_set( $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $post_ids, $this->cache_group );
 			wp_cache_set( 'found_' . $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $wp_query->found_posts, $this->cache_group );
+<<<<<<< HEAD
 >>>>>>> Add caching by post type, using a cache salt for each post type
+=======
+>>>>>>> e56a611a60f8ac9a3b0a116316345f26514d2bb1
 		}
 
 		if ( $wp_query->query_vars['posts_per_page'] > -1 ) {
