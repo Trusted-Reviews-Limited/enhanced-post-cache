@@ -114,6 +114,8 @@ class Enhanced_Post_Cache {
 	}
 
 	/**
+	 * Hook into query early to work which post type is in use to generate different cache keys.
+	 *
 	 * @param $wp_query
 	 */
 	function parse_query( $wp_query ) {
@@ -175,7 +177,7 @@ class Enhanced_Post_Cache {
 		}
 		$this->cache_key   = md5( $query );
 		$this->found_posts = 0;
-		$cache             = wp_cache_get( $this->cache_key . $this->cache_salt, $this->cache_group );
+		$cache             = wp_cache_get( $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $this->cache_group );
 
 		if ( ! empty( $cache ) && is_array( $cache ) ) {
 			$this->last_result  = $wpdb->last_result;
@@ -218,11 +220,11 @@ class Enhanced_Post_Cache {
 				'post_ids'    => $post_ids,
 				'found_posts' => $wp_query->found_posts,
 			);
-			wp_cache_set( $this->cache_key . $this->cache_salt, $value, $this->cache_group );
+			wp_cache_set( $this->cache_key . $this->cache_salt[ $this->cache_salt_key ], $value, $this->cache_group );
 
 		}
 
-		if ( $wp_query->query_vars['posts_per_page'] > - 1 ) {
+		if ( $wp_query->query_vars['posts_per_page'] > -1 ) {
 			$wp_query->max_num_pages = ceil( $wp_query->found_posts / $wp_query->query_vars['posts_per_page'] );
 		}
 
@@ -233,6 +235,9 @@ class Enhanced_Post_Cache {
 		return is_array( $this->all_post_ids );
 	}
 
+	/**
+	 * Set cache key for all post types.
+	 */
 	private function set_cache_salt() {
 		$list       = [ 'any', $this->cache_salt_key ];
 		$post_types = get_post_types( '', 'names' );
