@@ -1,12 +1,12 @@
 {
-    "name"       : "timeincoss/enhanced-post-cache",
+    "name"       : "trustedreviews/enhanced-post-cache",
     "description": "Cache post queries for WordPress",
     "type"       : "wordpress-muplugin",
     "license"    : "GPL-2.0+",
     "authors"    : [
         {
-            "name"    : "Time Inc UK",
-            "homepage": "http://www.timeincuk.com/"
+            "name"    : "Trusted Reviews",
+            "homepage": "http://www.trustedreviews.com/"
         }
     ],
     "require": {
