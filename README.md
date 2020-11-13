@@ -1,7 +1,7 @@
 Enhanced Post Cache
 ===================
 
-All up in your WP_Query, caching the things. Fork of the [Advanced Post Cache](https://github.com/Automattic/advanced-post-cache) by [Automattic](https://automattic.com/).
+All up in your WP_Query, caching the things. Fork of the plugin [enhanced-post-cache](https://github.com/TimeIncUK/enhanced-post-cache) which is a fork of [Advanced Post Cache](https://github.com/Automattic/advanced-post-cache) by [Automattic](https://automattic.com/).
 
 ## License
 
@@ -33,4 +33,4 @@ There are various ways you can contribute:
 
 ## Credits 
 
-This plugin was written by the development team at [Time Inc. (UK) Ltd](http://www.timeincuk.com/) and maintained by [Jonathan Harris](https://github.com/spacedmonkey/) and [Romulo De Lazzari](https://github.com/romulodl).
+This plugin was written by the development team at [Trustedreviews](http://www.trustedreviews.com/) and maintained by [Jonathan Harris].
