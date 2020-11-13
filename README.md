@@ -33,4 +33,4 @@ There are various ways you can contribute:
 
 ## Credits 
 
-This plugin was written by the development team at [Trustedreviews](http://www.trustedreviews.com/) and maintained by [Jonathan Harris].
+This plugin was written by the development team at [Trustedreviews](http://www.trustedreviews.com/).
