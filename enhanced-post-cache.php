@@ -150,6 +150,8 @@ class Enhanced_Post_Cache {
 		global $wpdb;
 
 		if ( $this->is_cached() ) {
+			$this->prime_post_caches( $this->all_post_ids, $wp_query->query_vars['update_post_term_cache'], $wp_query->query_vars['update_post_meta_cache'] );
+
 			$posts = array_map( 'get_post', $this->all_post_ids );
 			$wp_query->found_posts = $this->found_posts;
 			$wpdb->last_result = $this->last_result;
@@ -168,6 +170,60 @@ class Enhanced_Post_Cache {
 		}
 
 		return $posts;
+	}
+
+	/**
+	 * Copy of _prime_post_caches which is a private function.
+	 *
+	 * @see update_post_caches()
+	 * @see _prime_post_caches()
+	 *
+	 * @global wpdb $wpdb WordPress database abstraction object.
+	 *
+	 * @param array $ids               ID list.
+	 * @param bool  $update_term_cache Optional. Whether to update the term cache. Default true.
+	 * @param bool  $update_meta_cache Optional. Whether to update the meta cache. Default true.
+	 */
+	private function prime_post_caches( $ids, $update_term_cache = true, $update_meta_cache = true ) {
+		global $wpdb;
+
+		$non_cached_ids = $this->get_non_cached_ids( $ids, 'posts' );
+		if ( ! empty( $non_cached_ids ) ) {
+			$fresh_posts = $wpdb->get_results( sprintf( "SELECT $wpdb->posts.* FROM $wpdb->posts WHERE ID IN (%s)", implode( ',', $non_cached_ids ) ) );
+
+			update_post_caches( $fresh_posts, 'any', $update_term_cache, $update_meta_cache );
+		}
+	}
+
+	/**
+	 * Copy of the _get_non_cached_ids function in core that checks
+	 * to see if the wp_cache_get_multiple function exists.
+	 *
+	 * @see _get_non_cached_ids()
+	 *
+	 * @param int[]  $object_ids Array of IDs.
+	 * @param string $cache_key  The cache bucket to check against.
+	 * @return int[] Array of IDs not present in the cache.
+	 */
+	private function get_non_cached_ids( $object_ids, $cache_key ) {
+		$clean = array();
+		if ( function_exists( 'wp_cache_get_multiple' ) ) {
+			$cache_values = wp_cache_get_multiple( $object_ids, $cache_key );
+			foreach ( $cache_values as $id => $value ) {
+				if ( ! $value ) {
+					$non_cached_ids[] = (int) $id;
+				}
+			}
+		} else {
+			foreach ( $object_ids as $id ) {
+				$id = (int) $id;
+				if ( ! wp_cache_get( $id, $cache_key ) ) {
+					$clean[] = $id;
+				}
+			}
+		}
+
+		return $clean;
 	}
 
 	private function is_cached() {
